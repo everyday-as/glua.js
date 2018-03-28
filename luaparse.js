@@ -321,7 +321,7 @@
       };
     }
     , binaryExpression: function(operator, left, right) {
-      var type = ('and' === operator || 'or' === operator) ?
+      var type = ('&&' === operator || '||' === operator || 'and' === operator || 'or' === operator) ?
         'LogicalExpression' :
         'BinaryExpression';
 
@@ -651,7 +651,13 @@
           if (47 === next) return scanPunctuator('//');
         return scanPunctuator('/');
 
-      case 38: case 124: // & |
+      case 38: // &
+        if (38 === next) // glua: &&
+          return scanNonKeywordOperator(2, 'and');
+      case 124: // |
+        if (124 === next) // glua: ||
+          return scanNonKeywordOperator(2, 'or');
+
         if ((options.luaVersion === '5.1') || (options.luaVersion === '5.2'))
           break;
 
@@ -768,6 +774,17 @@
       , line: line
       , lineStart: lineStart
       , range: [tokenStart, index]
+    };
+  }
+
+  function scanNonKeywordOperator(size, name) {
+    index += size;
+    return {
+          type: Keyword
+        , value: name
+        , line: line
+        , lineStart: lineStart
+        , range: [index - size, index]
     };
   }
 
@@ -1251,7 +1268,7 @@
   function isKeyword(id) {
     switch (id.length) {
       case 2:
-        return 'do' === id || 'if' === id || 'in' === id || 'or' === id;
+        return '&&' == id || '||' == id || 'do' === id || 'if' === id || 'in' === id || 'or' === id; // glua: add && ||
       case 3:
         return 'and' === id || 'end' === id || 'for' === id || 'not' === id;
       case 4:
@@ -2026,7 +2043,7 @@
         case 61: case 126: return 3; // == ~=
         case 111: return 1; // or
       }
-    } else if (97 === charCode && 'and' === operator) return 2;
+    } else if (97 === charCode && 'and' === operator || '&&' === operator) return 2;
     return 0;
   }
 

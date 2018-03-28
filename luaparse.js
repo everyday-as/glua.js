@@ -631,6 +631,10 @@
         if (61 === next) return scanPunctuator('<=');
         return scanPunctuator('<');
 
+      case 33: // glua: !
+        if (61 === next) return scanPunctuator('~='); // !=
+        return scanNonKeywordOperator(1, 'not');
+
       case 126: // ~
         if (61 === next) return scanPunctuator('~=');
         if ((options.luaVersion === '5.1') || (options.luaVersion === '5.2'))
@@ -1306,6 +1310,8 @@
 
   function isKeyword(id) {
     switch (id.length) {
+      case 1:
+        return '!' == id; // glua: add !
       case 2:
         return '&&' == id || '||' == id || 'do' === id || 'if' === id || 'in' === id || 'or' === id; // glua: add && ||
       case 3:
@@ -1328,7 +1334,7 @@
 
   function isUnary(token) {
     if (Punctuator === token.type) return '#-~'.indexOf(token.value) >= 0;
-    if (Keyword === token.type) return 'not' === token.value;
+    if (Keyword === token.type) return 'not' === token.value || '!' === token.value;
     return false;
   }
 
@@ -2079,10 +2085,10 @@
         case 60: case 62:
             if('<<' === operator || '>>' === operator) return 7; // << >>
             return 3; // <= >=
-        case 61: case 126: return 3; // == ~=
-        case 111: return 1; // or
+        case 61: case 126: case 33: return 3; // == ~= glua: !=
+        case 111: case 124: return 1; // or glua: ||
       }
-    } else if (97 === charCode && 'and' === operator || '&&' === operator) return 2;
+    } else if (97 === charCode && 'and' === operator || '&&' === operator) return 2; // glua: &&
     return 0;
   }
 

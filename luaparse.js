@@ -85,7 +85,7 @@
     , onLocalDeclaration: null
     // The version of Lua targeted by the parser (string; allowed values are
     // '5.1', '5.2', '5.3').
-    , luaVersion: '5.1'
+    , luaVersion: '5.2'
     // Whether to allow code points outside the Basic Latin block in identifiers
     , extendedIdentifiers: false
   };

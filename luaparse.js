@@ -575,10 +575,12 @@
   function lex() {
     skipWhiteSpace();
 
-    // Skip comments beginning with --
+    // Skip comments beginning with --, //, /*
     while (45 === input.charCodeAt(index) &&
-           45 === input.charCodeAt(index + 1)) {
-      scanComment();
+           45 === input.charCodeAt(index + 1) ||
+           '/' === input.charAt(index) &&
+           ('/' === input.charAt(index + 1) || '*' === input.charAt(index + 1))) {
+      scanComment('*' === input.charAt(index + 1) ? 2 : '/' === input.charAt(index));
       skipWhiteSpace();
     }
     if (index >= length) return {
@@ -1094,7 +1096,7 @@
   // The multiline functionality works the exact same way as with string
   // literals so we reuse the functionality.
 
-  function scanComment() {
+  function scanComment(cStyle) {
     tokenStart = index;
     index += 2; // --
 
@@ -1105,7 +1107,10 @@
       , lineStartComment = lineStart
       , lineComment = line;
 
-    if ('[' === character) {
+    if (cStyle === 2) {
+      content = readCStyleComment();
+      isLong = true;
+    } else if (!cStyle && '[' === character) {
       content = readLongString(true);
       // This wasn't a multiline comment after all.
       if (false === content) content = character;
@@ -1190,6 +1195,40 @@
               errors.unfinishedLongComment :
               errors.unfinishedLongString,
           firstLine, '<eof>');
+  }
+
+  // read garry's lovely cstyle comments /* */
+  function readCStyleComment() {
+    var level = 0
+      , content = ''
+      , terminator = false
+      , character, stringStart;
+
+    // If the first character is a newline, ignore it and begin on next line.
+    if (isLineTerminator(input.charCodeAt(index))) consumeEOL();
+
+    stringStart = index;
+    while (index < length) {
+      // To keep track of line numbers run the `consumeEOL()` which increments
+      // its counter.
+      if (isLineTerminator(input.charCodeAt(index))) consumeEOL();
+
+      character = input.charAt(index++);
+
+      // Once the delimiter is found, iterate through the depth count and see
+      // if it matches.
+      if ('*' === character) {
+        terminator = true;
+        if ('/' !== input.charAt(index)) terminator = false;
+      }
+
+      // We reached the end of the multiline string. Get out now.
+      if (terminator) break;
+    }
+    content += input.slice(stringStart, index - 1);
+    index += 1;
+
+    return content;
   }
 
   // ## Lex functions and helpers.

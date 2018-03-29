@@ -642,6 +642,8 @@
       case 38: // &
         if (38 === next) // glua: &&
           return scanNonKeywordOperator(2, 'and');
+        break;
+
       case 124: // |
         if (124 === next) // glua: ||
           return scanNonKeywordOperator(2, 'or');
@@ -1051,6 +1053,7 @@
           return String.fromCharCode(parseInt(input.slice(sequenceStart + 1, index), 16));
         }
         raise({}, errors.hexadecimalDigitExpected, '\\' + input.slice(sequenceStart, index + 2));
+        break;
 
       // lua 5.3 unicode escapes
       //case 'u':
@@ -1270,9 +1273,9 @@
   function isKeyword(id) {
     switch (id.length) {
       case 1:
-        return '!' == id; // glua: add !
+        return '!' === id; // glua: add !
       case 2:
-        return '&&' == id || '||' == id || 'do' === id || 'if' === id || 'in' === id || 'or' === id; // glua: add && ||
+        return '&&' === id || '||' === id || 'do' === id || 'if' === id || 'in' === id || 'or' === id; // glua: add && ||
       case 3:
         return 'and' === id || 'end' === id || 'for' === id || 'not' === id;
       case 4:

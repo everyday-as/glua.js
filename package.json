@@ -1,7 +1,7 @@
 {
-  "name": "luaparse",
+  "name": "gluaparse",
   "version": "0.2.1",
-  "description": "A Lua parser in JavaScript",
+  "description": "A GMod Lua parser in JavaScript",
   "keywords": [
     "ast",
     "lua",

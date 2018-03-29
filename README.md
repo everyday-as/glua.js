@@ -1,38 +1,17 @@
-# luaparse [![Build Status](https://travis-ci.org/oxyc/luaparse.svg)](https://travis-ci.org/oxyc/luaparse)
+# gluaparse
 
-A Lua parser written in JavaScript, for my bachelor's thesis at Arcada.
+A Lua parser written in JavaScript, **hard targeted** at the Garry's Mod
+version of LuaJIT 2.0.3.
 
-## Installation
-
-Install through `bower install luaparse` or `npm install luaparse`.
+Based on the original [oxyc/luaparse](https://github.com/oxyc/luaparse) which
+is licensed under MIT by Oskar Schöldström.
 
 ## Usage
 
-CommonJS
-
 ```js
-var parser = require('luaparse');
+var parser = require('gluaparse');
 var ast = parser.parse('i = 0');
 console.log(JSON.stringify(ast));
-```
-
-AMD
-
-```js
-require(['luaparse'], function(parser) {
-  var ast = parser.parse('i = 0');
-  console.log(JSON.stringify(ast));
-});
-```
-
-Browser
-
-```html
-<script src="luaparse.js"></script>
-<script>
-var ast = luaparse.parse('i = 0');
-console.log(JSON.stringify(ast));
-</script>
 ```
 
 ## Parser Interface
@@ -40,7 +19,7 @@ console.log(JSON.stringify(ast));
 Basic usage:
 
 ```js
-luaparse.parse(code, options);
+gluaparse.parse(code, options);
 ```
 
 The output of the parser is an Abstract Syntax Tree (AST) formatted in JSON.

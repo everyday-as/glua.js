@@ -50,7 +50,7 @@
   else {
     factory((root[name] = {}));
   }
-}(this, 'luaparse', function (exports) {
+}(this, 'gluaparse', function (exports) {
   'use strict';
 
   exports.version = '0.2.1';
@@ -83,11 +83,6 @@
     // A callback which will be invoked when a local variable is declared in the current scope.
     // The variable's name will be passed as the only parameter
     , onLocalDeclaration: null
-    // The version of Lua targeted by the parser (string; allowed values are
-    // '5.1', '5.2', '5.3').
-    , luaVersion: '5.2'
-    // Whether to allow code points outside the Basic Latin block in identifiers
-    , extendedIdentifiers: false
   };
 
   // The available tokens expressed as enum flags so they can be checked with
@@ -620,14 +615,10 @@
         return scanPunctuator('=');
 
       case 62: // >
-        if (options.luaVersion === '5.3')
-          if (62 === next) return scanPunctuator('>>');
         if (61 === next) return scanPunctuator('>=');
         return scanPunctuator('>');
 
       case 60: // <
-        if (options.luaVersion === '5.3')
-          if (60 === next) return scanPunctuator('<<');
         if (61 === next) return scanPunctuator('<=');
         return scanPunctuator('<');
 
@@ -637,13 +628,10 @@
 
       case 126: // ~
         if (61 === next) return scanPunctuator('~=');
-        if ((options.luaVersion === '5.1') || (options.luaVersion === '5.2'))
-          break;
-        return scanPunctuator('~');
+        break;
 
       case 58: // :
-        if ((options.luaVersion === '5.2') || (options.luaVersion === '5.3'))
-          if (58 === next) return scanPunctuator('::');
+        if (58 === next) return scanPunctuator('::');
         return scanPunctuator(':');
 
       case 91: // [
@@ -651,26 +639,18 @@
         if (91 === next || 61 === next) return scanLongStringLiteral();
         return scanPunctuator('[');
 
-      case 47: // /
-        // Check for integer division op (//)
-        if (options.luaVersion === '5.3')
-          if (47 === next) return scanPunctuator('//');
-        return scanPunctuator('/');
-
       case 38: // &
         if (38 === next) // glua: &&
           return scanNonKeywordOperator(2, 'and');
       case 124: // |
         if (124 === next) // glua: ||
           return scanNonKeywordOperator(2, 'or');
-
-        if ((options.luaVersion === '5.1') || (options.luaVersion === '5.2'))
-          break;
+        break;
 
         /* fall through */
       case 42: case 94: case 37: case 44: case 123: case 125:
       case 93: case 40: case 41: case 59: case 35: case 45:
-      case 43: // * ^ % , { } ] ( ) ; # - +
+      case 43: case 47: // * ^ % , { } ] ( ) ; # - + /
         return scanPunctuator(input.charAt(index));
     }
 
@@ -1059,38 +1039,25 @@
         return String.fromCharCode(ddd);
 
       case 'z':
-        if ((options.luaVersion === '5.2') || (options.luaVersion === '5.3')) {
-          ++index;
-          skipWhiteSpace();
-          return '';
-        }
+        ++index;
+        skipWhiteSpace();
+        return '';
 
-        /* fall through */
       case 'x':
-        if ((options.luaVersion === '5.2') || (options.luaVersion === '5.3')) {
-          // \xXX, where XX is a sequence of exactly two hexadecimal digits
-          if (isHexDigit(input.charCodeAt(index + 1)) &&
-              isHexDigit(input.charCodeAt(index + 2))) {
-            index += 3;
-            return String.fromCharCode(parseInt(input.slice(sequenceStart + 1, index), 16));
-          }
-          raise({}, errors.hexadecimalDigitExpected, '\\' + input.slice(sequenceStart, index + 2));
+        // \xXX, where XX is a sequence of exactly two hexadecimal digits
+        if (isHexDigit(input.charCodeAt(index + 1)) &&
+            isHexDigit(input.charCodeAt(index + 2))) {
+          index += 3;
+          return String.fromCharCode(parseInt(input.slice(sequenceStart + 1, index), 16));
         }
+        raise({}, errors.hexadecimalDigitExpected, '\\' + input.slice(sequenceStart, index + 2));
 
-        /* fall through */
-      case 'u':
-        if (options.luaVersion === '5.3') {
-          return readUnicodeEscapeSequence();
-        }
+      // lua 5.3 unicode escapes
+      //case 'u':
+      //  return readUnicodeEscapeSequence();
 
-        /* fall through */
       default:
-        if ((options.luaVersion === '5.2') || (options.luaVersion === '5.3'))
-          raise({}, errors.invalidEscape, '\\' + input.slice(sequenceStart, index + 1));
-
-        /* fall through */
-      case '\\': case '"': case "'":
-        return input.charAt(index++);
+        raise({}, errors.invalidEscape, '\\' + input.slice(sequenceStart, index + 1));
     }
   }
 
@@ -1286,22 +1253,14 @@
 
   // From [Lua 5.2](http://www.lua.org/manual/5.2/manual.html#8.1) onwards
   // identifiers cannot use 'locale-dependent' letters (i.e. dependent on the C locale).
-  // On the other hand, LuaJIT allows arbitrary octets ≥ 128 in identifiers.
+  // glua: LuaJIT allows arbitrary octets ≥ 128 in identifiers.
 
   function isIdentifierStart(charCode) {
-    if ((charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || 95 === charCode)
-      return true;
-    if (options.extendedIdentifiers && charCode >= 128)
-      return true;
-    return false;
+    return (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || 95 === charCode || charCode >= 128;    
   }
 
   function isIdentifierPart(charCode) {
-    if ((charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || 95 === charCode || (charCode >= 48 && charCode <= 57))
-      return true;
-    if (options.extendedIdentifiers && charCode >= 128)
-      return true;
-    return false;
+    return (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || 95 === charCode  || charCode >= 128 || (charCode >= 48 && charCode <= 57);
   }
 
   // [3.1 Lexical Conventions](http://www.lua.org/manual/5.2/manual.html#3.1)
@@ -1317,11 +1276,7 @@
       case 3:
         return 'and' === id || 'end' === id || 'for' === id || 'not' === id;
       case 4:
-        if ('else' === id || 'then' === id)
-          return true;
-        if ((options.luaVersion === '5.2') || (options.luaVersion === '5.3'))
-          return ('goto' === id);
-        return false;
+        return 'else' === id || 'then' === id || 'goto' === id;
       case 5:
         return 'break' === id || 'local' === id || 'until' === id || 'while' === id;
       case 6:
@@ -1568,9 +1523,7 @@
     if (trackLocations) locations.pop();
 
     // When a `;` is encounted, simply eat it without storing it.
-    if (options.luaVersion === '5.2' || options.luaVersion === '5.3') {
-      if (consume(';')) return;
-    }
+    if (consume(';')) return;
 
     return parseAssignmentOrCallStatement();
   }
@@ -2325,10 +2278,6 @@
     scopeDepth = 0;
     globals = [];
     locations = [];
-
-    if (!((options.luaVersion === '5.1') || (options.luaVersion === '5.2') || (options.luaVersion === '5.3'))) {
-      throw new Error(sprintf("Lua version '%1' not supported", options.luaVersion));
-    }
 
     if (options.comments) comments = [];
     if (!options.wait) return end();

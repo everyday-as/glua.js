@@ -1,8 +1,4 @@
 node_modules
-docs/*
-!docs/*.md
-!docs/*.1
-!docs/layout/
 dist
 logs
 components

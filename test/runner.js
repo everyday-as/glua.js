@@ -20,7 +20,7 @@
 
   var Spec = load('Spec', './lib/spec')
     , Newton = load('Newton', './lib/newton')
-    , luaparse = load('luaparse', '../luaparse')
+    , gluaparse = load('gluaparse', '../gluaparse')
     , specs = root.specs = [
         './spec/assignments'
       , './spec/comments'
@@ -50,7 +50,7 @@
       else return function(value) { };
     }())
     // Create the test suite.
-    , suite = new Spec.Suite('Luaparse Unit Tests');
+    , suite = new Spec.Suite('gluaparse Unit Tests');
 
   if (!('assign' in Object)) {
     Object.assign = function () {
@@ -80,7 +80,7 @@
   Spec.Test.prototype.parseError = function (source, expected, options) {
     var ok = false, actual;
     try {
-      actual = luaparse.parse(source, options);
+      actual = gluaparse.parse(source, options);
     } catch (exception) {
       actual = exception.message;
       ok = actual === expected;
@@ -94,7 +94,7 @@
 
   // Expect the parsed AST to match.
   Spec.Test.prototype.parses = function (source, expected, options, variant) {
-    return this.deepEqual(luaparse.parse(source, options), expected, escapeString(source) +
+    return this.deepEqual(gluaparse.parse(source, options), expected, escapeString(source) +
       (variant ? (' ' + variant) : ''));
   };
 
@@ -110,8 +110,8 @@
     }
 
     return this.deepEqual(
-      normalise(luaparse.parse('a = ' + source, options)),
-      normalise(luaparse.parse('a = ' + expected, options)),
+      normalise(gluaparse.parse('a = ' + source, options)),
+      normalise(gluaparse.parse('a = ' + expected, options)),
       source + ' is equal to ' + expected
     );
   };
@@ -385,11 +385,11 @@
   // Additional tests ---------------------------------------------------------
 
   suite.addTest('API', function() {
-    this.equal(typeof luaparse, 'object', 'luaparse is an object');
-    this.equal(typeof luaparse.parse, 'function', 'luaparse.parse() is a function');
-    this.equal(typeof luaparse.write, 'function', 'luaparse.write() is a function');
-    this.equal(typeof luaparse.end, 'function', 'luaparse.end() is a function');
-    var parse = luaparse.parse({ wait: true });
+    this.equal(typeof gluaparse, 'object', 'gluaparse is an object');
+    this.equal(typeof gluaparse.parse, 'function', 'gluaparse.parse() is a function');
+    this.equal(typeof gluaparse.write, 'function', 'gluaparse.write() is a function');
+    this.equal(typeof gluaparse.end, 'function', 'gluaparse.end() is a function');
+    var parse = gluaparse.parse({ wait: true });
     this.deepEqual(parse.end('break'), {
       "type": "Chunk",
       "body": [
@@ -405,7 +405,7 @@
       , destroyedScopes = 0
       , localDeclarations = [];
 
-    parse = luaparse.parse('do local a = 1 b = 1 end -- comment', {
+    parse = gluaparse.parse('do local a = 1 b = 1 end -- comment', {
         scope: true
       , locations: true
       , ranges: true
@@ -424,7 +424,7 @@
       , 'should invoke onCreateNode callback with syntax node parameter'
     );
 
-    this.deepEqual(luaparse.parse('#!/usr/bin/lua\nbreak', { locations: true, ranges: true }), {
+    this.deepEqual(gluaparse.parse('#!/usr/bin/lua\nbreak', { locations: true, ranges: true }), {
       "type": "Chunk", "body": [{"type": "BreakStatement", "loc": {"start": {"line": 2, "column": 0}, "end": {"line": 2, "column": 5}}, "range": [15, 20]}], "loc": {"start": {"line": 2, "column": 0}, "end": {"line": 2, "column": 5}}, "range": [15, 20], "comments": []
     }, 'should ignore shebangs');
 
@@ -436,9 +436,9 @@
   suite.addTest('Extended identifiers', function () {
     var lcode = 'foo.\ud83d\udca9';
     var rcode = 'foo["\ud83d\udca9"]';
-    var left = luaparse.parse('return ' + lcode,
+    var left = gluaparse.parse('return ' + lcode,
                               { "extendedIdentifiers": true }).body[0].arguments[0].identifier.name;
-    var right = luaparse.parse('return ' + rcode,
+    var right = gluaparse.parse('return ' + rcode,
                                { "extendedIdentifiers": true }).body[0].arguments[0].index.value;
     this.equal(left, right, lcode + ' == ' + rcode);
 
@@ -491,11 +491,11 @@
       count += testcases[i].length - 1;
 
       var list = testcases[i];
-      var left = luaparse.parse('return ' + list[0],
+      var left = gluaparse.parse('return ' + list[0],
                                 { "luaVersion": "5.3" }).body[0].arguments[0];
 
       for (var j = 1; j < list.length; ++j) {
-        var right = luaparse.parse('return ' + list[j],
+        var right = gluaparse.parse('return ' + list[j],
                                    { "luaVersion": "5.3" }).body[0].arguments[0];
 
         this.equal(left.value, right.value, symbolicControlChars(left.raw) + ' == ' + symbolicControlChars(right.raw));
@@ -522,19 +522,16 @@
     this.equalPrecedence('not not 1 + 1', '(not (not (1)) + 1)');
     this.equalPrecedence('1 + #1', '1 + (#1)');
     this.equalPrecedence('-x^2', '-(x^2)');
-    this.equalPrecedence('3~2&1', '3~(2&1)', { "luaVersion": "5.3" });
-    this.equalPrecedence('3~2|1', '(3~2)|1', { "luaVersion": "5.3" });
-    this.equalPrecedence('1<<2 ..3', '1<<(2 ..3)', { "luaVersion": "5.3" });
-    this.done(18);
+    this.done(15);
   });
 
   suite.addTest('EOL sequences', function() {
     var options = { locations: true }
-      , baseline = luaparse.parse('foo = 1\nbar = 1', options);
+      , baseline = gluaparse.parse('foo = 1\nbar = 1', options);
 
-    this.deepEqual(baseline, luaparse.parse('foo = 1\rbar = 1', options), 'carriage return');
-    this.deepEqual(baseline, luaparse.parse('foo = 1\n\rbar = 1', options), 'newline followed by carriage return');
-    this.deepEqual(baseline, luaparse.parse('foo = 1\r\nbar = 1', options), 'carriage return followed by newline');
+    this.deepEqual(baseline, gluaparse.parse('foo = 1\rbar = 1', options), 'carriage return');
+    this.deepEqual(baseline, gluaparse.parse('foo = 1\n\rbar = 1', options), 'newline followed by carriage return');
+    this.deepEqual(baseline, gluaparse.parse('foo = 1\r\nbar = 1', options), 'carriage return followed by newline');
     this.done(3);
   });
 

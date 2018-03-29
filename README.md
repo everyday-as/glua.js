@@ -4,7 +4,7 @@ A Lua parser written in JavaScript, **hard targeted** at the Garry's Mod
 version of LuaJIT 2.0.3.
 
 Based on the original [oxyc/luaparse](https://github.com/oxyc/luaparse) which
-is licensed under MIT by Oskar Schöldström.
+is licensed under MIT by Oskar Schöldström. 
 
 ## Usage
 

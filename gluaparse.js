@@ -1059,6 +1059,9 @@
       //case 'u':
       //  return readUnicodeEscapeSequence();
 
+      case '\\': case '"': case "'":
+        return input.charAt(index++);
+
       default:
         raise({}, errors.invalidEscape, '\\' + input.slice(sequenceStart, index + 1));
     }

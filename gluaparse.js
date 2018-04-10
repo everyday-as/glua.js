@@ -2271,6 +2271,12 @@
     input = _input || '';
     options = extend(defaultOptions, _options);
 
+    // Catches EFBBBF (UTF-8 BOM) because the buffer-to-string
+    // conversion translates it to FEFF (UTF-16 BOM)
+    if (input.charCodeAt(0) === 0xFEFF) {
+      input = input.slice(1);
+    }
+
     // Rewind the lexer
     index = 0;
     line = 1;

@@ -15,12 +15,12 @@
   "files": [
     "README.md",
     "LICENSE",
-    "luaparse.js",
-    "bin/luaparse"
+    "gluaparse.js",
+    "bin",
+    "bin/gluaparse"
   ],
-  "main": "luaparse.js",
-  "bin": "./bin/luaparse",
-  "man": "./docs/luaparse.1",
+  "main": "gluaparse.js",
+  "bin": "./bin/gluaparse",
   "repository": {
     "type": "git",
     "url": "https://github.com/oxyc/luaparse.git"
